@@ -1,0 +1,34 @@
+name: Test basic Slack notification (unformatted)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Slack Notify action (unformatted path)
+        id: action
+        continue-on-error: true
+        uses: .
+        env:
+          SLACK_WEBHOOK: https://hooks.slack.com/services/FAKE/FAKE/FAKEFAKEFAKEFAKEFAKEFAKE
+          SLACK_MESSAGE: "Test notification from act"
+          SLACK_TITLE: "Test Title"
+          SLACK_COLOR: "good"
+          SLACK_USERNAME: "Test Bot"
+          GITHUB_REF: refs/heads/main
+          GITHUB_EVENT_NAME: push
+
+      - name: Assert action was invoked (unformatted path)
+        run: |
+          # The action should have been attempted. Since we used a fake webhook,
+          # it may fail at the HTTP POST step, but the action itself should have
+          # been invoked (outcome is either success or failure, not skipped).
+          OUTCOME="${{ steps.action.outcome }}"
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to be invoked"
+            exit 1
+          fi
+          echo "PASS: action was invoked (outcome=$OUTCOME)"

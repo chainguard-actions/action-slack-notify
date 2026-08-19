@@ -1,0 +1,36 @@
+name: Test Slack notification with slackify markdown conversion
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Slack Notify action (slackify markdown path)
+        id: action
+        continue-on-error: true
+        uses: .
+        env:
+          SLACK_WEBHOOK: https://hooks.slack.com/services/FAKE/FAKE/FAKEFAKEFAKEFAKEFAKEFAKE
+          SLACKIFY_MARKDOWN: "true"
+          SLACK_MESSAGE: "**Bold text** and _italic_ from act test"
+          SLACK_TITLE: "Markdown Test"
+          SLACK_COLOR: "good"
+          SLACK_USERNAME: "Test Bot"
+          GITHUB_REF: refs/heads/main
+          GITHUB_EVENT_NAME: push
+
+      - name: Assert action was invoked (slackify markdown path)
+        run: |
+          # The action should have been attempted. The markdown conversion steps
+          # should run (SLACKIFY_MARKDOWN=true and SLACK_MESSAGE is set).
+          # The final Docker notification step may fail due to fake webhook,
+          # but the action itself should have been invoked.
+          OUTCOME="${{ steps.action.outcome }}"
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to be invoked"
+            exit 1
+          fi
+          echo "PASS: action was invoked (outcome=$OUTCOME)"

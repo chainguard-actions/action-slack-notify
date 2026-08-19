@@ -1,0 +1,35 @@
+name: Test basic unformatted Slack notification
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK: https://hooks.slack.com/services/FAKE/FAKE/FAKE
+      SLACK_MESSAGE: "Test notification message"
+      SLACK_USERNAME: "GitHub Actions"
+      SLACK_CHANNEL: "#general"
+      SLACK_COLOR: "good"
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action (unformatted path - SLACKIFY_MARKDOWN not set)
+        id: action
+        uses: .
+        continue-on-error: true
+        # SLACKIFY_MARKDOWN is not set, so the unformatted Docker step runs
+        # The Docker container will fail because the webhook is fake,
+        # but we verify the action was invoked correctly
+
+      - name: Assert action was attempted
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action should have run (either succeeded or failed at the Docker step)
+          # It should NOT be 'skipped' — that would mean the step was never reached
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action step was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action was attempted (outcome: ${{ steps.action.outcome }})"

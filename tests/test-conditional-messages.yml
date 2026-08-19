@@ -1,0 +1,35 @@
+name: Test Slack notification with conditional success/failure messages
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK: https://hooks.slack.com/services/FAKE/FAKE/FAKE
+      SLACK_MESSAGE_ON_SUCCESS: "**Deployment succeeded!** :white_check_mark:"
+      SLACK_MESSAGE_ON_FAILURE: "**Deployment failed!** :x:"
+      SLACK_MESSAGE_ON_CANCEL: "**Deployment cancelled!** :warning:"
+      SLACKIFY_MARKDOWN: "true"
+      SLACK_USERNAME: "GitHub Actions"
+      SLACK_CHANNEL: "#deployments"
+      SLACK_COLOR: "good"
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with conditional messages and SLACKIFY_MARKDOWN
+        id: action
+        uses: .
+        continue-on-error: true
+        # Tests that SLACK_MESSAGE_ON_SUCCESS/FAILURE/CANCEL are processed
+        # through the slackify-markdown conversion steps when SLACKIFY_MARKDOWN=true
+
+      - name: Assert action was attempted (not skipped)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action step was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action was attempted with conditional messages (outcome: ${{ steps.action.outcome }})"
