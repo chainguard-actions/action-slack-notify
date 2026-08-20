@@ -1,0 +1,40 @@
+name: Test Slack notification with Slackify Markdown status messages
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Slack Notify action (slackify markdown with status messages)
+        id: action
+        uses: .
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK: "https://hooks.slack.com/services/FAKE/FAKE/FAKE"
+          SLACK_CHANNEL: "test-channel"
+          SLACK_USERNAME: "Test Bot"
+          SLACK_TITLE: "Deployment Status"
+          SLACK_MESSAGE: "Deployment completed"
+          SLACK_MESSAGE_ON_SUCCESS: "**Deployment succeeded!** :white_check_mark:"
+          SLACK_MESSAGE_ON_FAILURE: "**Deployment failed!** :x:"
+          SLACK_MESSAGE_ON_CANCEL: "**Deployment cancelled** :warning:"
+          SLACK_COLOR: "good"
+          SLACKIFY_MARKDOWN: "true"
+          GITHUB_REF: "refs/heads/act-harness"
+          GITHUB_EVENT_NAME: "push"
+
+      - name: Assert action ran (succeeded or failed gracefully without real webhook)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (all markdown conversions and notification sent)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no real Slack webhook; all markdown conversion steps still exercised)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

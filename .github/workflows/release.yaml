@@ -1,0 +1,31 @@
+on:
+  push:
+    tags:
+      - "v*"
+name: Release Creation
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create a Draft Release on GitHub
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get Release Name
+      id: get_release_name
+      run: |
+        safe_ref=$(printf '%s' "$GITHUB_REF_NAME" | tr -d '\n\r')
+        release_name="${safe_ref/v/Version }"
+        echo "release_name=$release_name" >> "$GITHUB_ENV"
+    - name: Publish a Draft Release
+      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+      with:
+        body: |
+          ## What's Changed
+
+          **Changelog:**
+        draft: true  # Creates a Draft Release
+        name: ${{ steps.get_release_name.outputs.release_name }}
+        generate_release_notes: true
+        append_body: true

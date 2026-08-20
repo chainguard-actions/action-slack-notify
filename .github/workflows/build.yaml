@@ -1,0 +1,32 @@
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout
+          uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        - name: install docker emulation
+          run: docker run --rm --privileged tonistiigi/binfmt:latest --install amd64,arm64
+        - name: Set up buildx
+          uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        - name: Login to ghcr.io
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_ACTOR: ${{ github.actor }}
+          run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        - name: Build and push
+          env:
+            GITHUB_REPOSITORY: ${{ github.repository }}
+            GITHUB_REF_NAME: ${{ github.ref_name }}
+          run: |
+            IMAGE_TAG=$(echo "ghcr.io/$GITHUB_REPOSITORY:$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]')
+            docker buildx build --platform linux/amd64,linux/arm64 -t "$IMAGE_TAG" --push .
